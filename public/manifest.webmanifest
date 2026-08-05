@@ -2,27 +2,22 @@
   "id": "./",
   "name": "SurgiBoard Global",
   "short_name": "SurgiBoard",
-  "description": "Offline-first General Surgery board preparation for Arab Board, Yemeni Board, Professional Master's, and global pathways.",
+  "description": "Evidence-governed General Surgery board preparation with adaptive learning, verified mock formats and secure offline packs.",
   "lang": "en",
   "dir": "auto",
   "start_url": "./#home",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
-  "background_color": "#f5f9f8",
-  "theme_color": "#092f3b",
+  "background_color": "#f4f8f8",
+  "theme_color": "#0a3141",
   "categories": ["education", "medical", "productivity"],
   "icons": [
-    {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    {"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
   ],
   "shortcuts": [
-    {"name": "Start study session", "short_name": "Study", "url": "./#study"},
-    {"name": "View progress", "short_name": "Progress", "url": "./#progress"}
+    {"name": "Daily plan", "short_name": "Plan", "url": "./#dashboard", "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "QBank Builder", "short_name": "QBank", "url": "./#qbank", "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Mock Exams", "short_name": "Mocks", "url": "./#mocks", "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml"}]}
   ]
 }
