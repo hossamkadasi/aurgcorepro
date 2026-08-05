@@ -1,6 +1,7 @@
 {
-  "application": "SurgiBoard Global",
-  "version": "0.1.0",
-  "release_channel": "pilot",
-  "released_at": "2026-08-05T18:05:30Z"
+  "name": "SurgiBoard Global",
+  "version": "2.0.0-alpha.1",
+  "channel": "clinical-pilot",
+  "builtAt": "2026-08-05T22:22:00+03:00",
+  "contentState": "demo-unpublished-plus-protected-published-packs"
 }

@@ -1,18 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SurgiBoard Global icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SurgiBoard Global</title>
+  <desc id="desc">A navy medical learning mark with a gold pulse and central node.</desc>
   <defs>
-    <linearGradient id="bg" x1="60" y1="30" x2="450" y2="480" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#092f3b"/>
-      <stop offset="1" stop-color="#0f7273"/>
+    <linearGradient id="bg" x1="70" y1="40" x2="440" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a3141"/>
+      <stop offset="1" stop-color="#116f70"/>
     </linearGradient>
-    <linearGradient id="gold" x1="170" y1="130" x2="350" y2="370" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#f1d69d"/>
-      <stop offset="1" stop-color="#c89a48"/>
-    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#071f2b" flood-opacity=".24"/>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="168" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="2"/>
-  <circle cx="256" cy="256" r="132" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="24"/>
-  <path d="M348 151c-26-28-61-42-100-42-74 0-132 52-132 121 0 48 27 82 74 101l44 18c21 9 31 19 31 34 0 21-19 35-47 35-35 0-65-14-92-42l-39 47c35 39 78 59 130 59 82 0 141-47 141-113 0-51-28-85-86-109l-39-16c-18-7-28-17-28-30 0-19 18-33 43-33 28 0 52 10 73 31z" fill="url(#gold)" transform="translate(18 -40) scale(.9)"/>
-  <path d="M133 345h246" stroke="#84d8cf" stroke-width="16" stroke-linecap="round"/>
-  <path d="M189 383h134" stroke="#fff" stroke-opacity=".75" stroke-width="12" stroke-linecap="round"/>
+  <rect x="42" y="42" width="428" height="428" rx="118" fill="url(#bg)" filter="url(#shadow)"/>
+  <path d="M115 268h82l24-66 51 132 31-82h94" fill="none" stroke="#f1d79f" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="31" fill="#fff"/>
+  <circle cx="256" cy="256" r="13" fill="#b98331"/>
 </svg>
