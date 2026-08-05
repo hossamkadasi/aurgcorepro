@@ -1,7 +1,9 @@
-name: Deploy SurgiBoard Global
+name: Validate and deploy SurgiBoard Global
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -11,53 +13,58 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  validate-and-deploy:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate JavaScript
+        run: |
+          node --check public/assets/config.js
+          node --check public/assets/demo-questions.js
+          node --check public/assets/app-core.js
+          node --check public/assets/app-views.js
+          node --check public/assets/app-session.js
+          node --check public/assets/app-account.js
+          node --check public/assets/app-data.js
+          node --check public/sw.js
+      - name: Validate JSON and required files
+        run: |
+          python3 -m json.tool public/manifest.webmanifest >/dev/null
+          python3 -m json.tool public/version.json >/dev/null
+          test -s public/index.html
+          test -s public/icon.svg
+          test -s docs/ARCHITECTURE.md
+          grep -q "SurgiBoard Global" public/index.html
+          grep -q "question-pack" public/assets/app-account.js
+          grep -q "DEMO / UNPUBLISHED" public/assets/demo-questions.js
+      - name: Scan for forbidden server secrets
+        run: |
+          ! grep -R -E "service_role|SUPABASE_SERVICE_ROLE_KEY|postgresql://|PACK_SIGNING_SECRET" public
+      - name: Upload validated site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate PWA files
-        run: |
-          test -f public/index.html
-          test -f public/manifest.webmanifest
-          test -f public/sw.js
-          test -f public/icon.svg
-          python -m json.tool public/manifest.webmanifest >/dev/null
-          node --check public/sw.js
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          html = Path('public/index.html').read_text(encoding='utf-8')
-          scripts = re.findall(r'<script>(.*?)</script>', html, flags=re.S)
-          if not scripts:
-              raise SystemExit('No inline application script found')
-          Path('/tmp/surgiboard-app.js').write_text(scripts[-1], encoding='utf-8')
-          PY
-          node --check /tmp/surgiboard-app.js
-      - name: Prepare production artifact
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('public/index.html')
-          html = path.read_text(encoding='utf-8')
-          html = html.replace('<script defer src="https://cdn.jsdelivr.net', '<script src="https://cdn.jsdelivr.net')
-          path.write_text(html, encoding='utf-8')
-          PY
-          cp public/index.html public/404.html
-          touch public/.nojekyll
-      - name: Configure GitHub Pages
+      - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
