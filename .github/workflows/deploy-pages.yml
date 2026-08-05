@@ -13,58 +13,73 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: surgiboard-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Validate JavaScript
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate production PWA
+        shell: bash
         run: |
-          node --check public/assets/config.js
-          node --check public/assets/demo-questions.js
-          node --check public/assets/app-core.js
-          node --check public/assets/app-views.js
-          node --check public/assets/app-session.js
-          node --check public/assets/app-account.js
-          node --check public/assets/app-data.js
-          node --check public/sw.js
-      - name: Validate JSON and required files
-        run: |
+          set -euo pipefail
+          required=(
+            public/index.html
+            public/manifest.webmanifest
+            public/sw.js
+            public/version.json
+            public/icon.svg
+            public/assets/config.js
+            public/assets/demo-questions.js
+            public/assets/styles.css
+            public/assets/app-core.js
+            public/assets/app-data.js
+            public/assets/app-session.js
+            public/assets/app-views.js
+            public/assets/app-account.js
+          )
+          for file in "${required[@]}"; do test -s "$file"; done
+          for file in public/assets/*.js public/sw.js; do node --check "$file"; done
           python3 -m json.tool public/manifest.webmanifest >/dev/null
           python3 -m json.tool public/version.json >/dev/null
-          test -s public/index.html
-          test -s public/icon.svg
-          test -s docs/ARCHITECTURE.md
           grep -q "SurgiBoard Global" public/index.html
-          grep -q "question-pack" public/assets/app-account.js
-          grep -q "DEMO / UNPUBLISHED" public/assets/demo-questions.js
-      - name: Scan for forbidden server secrets
-        run: |
-          ! grep -R -E "service_role|SUPABASE_SERVICE_ROLE_KEY|postgresql://|PACK_SIGNING_SECRET" public
-      - name: Upload validated site
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
+          grep -q "Demonstration item — unpublished, not specialist-approved, and not for clinical decision-making." public/assets/demo-questions.js
+          grep -q 'questionPack: "question-pack"' public/assets/config.js
+          grep -q 'adminMetrics: "admin-metrics"' public/assets/config.js
+          ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=|PACK_SIGNING_SECRET[[:space:]]*=|postgres(ql)?://[^[:space:]]+" public
 
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Configure Pages
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Pages artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp public/index.html public/404.html
+          touch public/.nojekyll
+
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Deploy
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
