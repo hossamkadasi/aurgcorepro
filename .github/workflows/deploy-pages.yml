@@ -30,6 +30,27 @@ jobs:
           test -f public/icon.svg
           python -m json.tool public/manifest.webmanifest >/dev/null
           node --check public/sw.js
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('public/index.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script>(.*?)</script>', html, flags=re.S)
+          if not scripts:
+              raise SystemExit('No inline application script found')
+          Path('/tmp/surgiboard-app.js').write_text(scripts[-1], encoding='utf-8')
+          PY
+          node --check /tmp/surgiboard-app.js
+      - name: Prepare production artifact
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('public/index.html')
+          html = path.read_text(encoding='utf-8')
+          html = html.replace('<script defer src="https://cdn.jsdelivr.net', '<script src="https://cdn.jsdelivr.net')
+          path.write_text(html, encoding='utf-8')
+          PY
+          cp public/index.html public/404.html
+          touch public/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
