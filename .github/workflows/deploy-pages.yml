@@ -3,6 +3,8 @@ name: Deploy SurgiBoard Global
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,14 +13,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: github-pages-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
-  validate-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +39,25 @@ jobs:
           Path('/tmp/surgiboard-app.js').write_text(scripts[-1], encoding='utf-8')
           PY
           node --check /tmp/surgiboard-app.js
+
+  bootstrap-pages:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable GitHub Pages for Actions deployments
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Prepare production artifact
         run: |
           python - <<'PY'
