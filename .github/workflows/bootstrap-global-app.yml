@@ -28,8 +28,9 @@ jobs:
           echo "35465623a4b9ae5c29511115f52dee319a310941c9d95bbf06e78b3fd94e2bb5  /tmp/surgiboard-global-v2.b64" | sha256sum --check --strict
           base64 --decode /tmp/surgiboard-global-v2.b64 > /tmp/surgiboard-global-v2.tar.xz
           echo "a422c0d42379f7eb80d3437307a00ba8763e7c1089bb0445ec2e27928b83a85d  /tmp/surgiboard-global-v2.tar.xz" | sha256sum --check --strict
-          git rm -f --ignore-unmatch .release/part-00 .release/part-01 .release/part-02 .release/part-03 .release/part-04 .release/part-05 .release/part-06 .release/part-07 .release/materialize.trigger .github/workflows/bootstrap-global-app.yml
+          git rm -f --ignore-unmatch .release/part-00 .release/part-01 .release/part-02 .release/part-03 .release/part-04 .release/part-05 .release/part-06 .release/part-07 .release/materialize.trigger
           tar -xJf /tmp/surgiboard-global-v2.tar.xz -C .
+          git checkout HEAD -- .github/workflows
 
       - name: Validate production PWA
         shell: bash
