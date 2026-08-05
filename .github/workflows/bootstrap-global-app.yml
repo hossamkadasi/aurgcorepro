@@ -1,0 +1,55 @@
+name: Bootstrap SurgiBoard Global production app
+
+on:
+  push:
+    branches:
+      - agent/global-production-app
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-release:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/global-production-app
+          fetch-depth: 0
+
+      - name: Verify and extract reviewed release bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode .release/surgiboard-global-v2.tar.xz.b64 > /tmp/surgiboard-global-v2.tar.xz
+          echo "a422c0d42379f7eb80d3437307a00ba8763e7c1089bb0445ec2e27928b83a85d  /tmp/surgiboard-global-v2.tar.xz" | sha256sum --check --strict
+          git rm -f .release/surgiboard-global-v2.tar.xz.b64 .github/workflows/bootstrap-global-app.yml
+          tar -xJf /tmp/surgiboard-global-v2.tar.xz -C .
+
+      - name: Validate production PWA
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in public/assets/*.js public/sw.js; do node --check "$file"; done
+          python -m json.tool public/manifest.webmanifest >/dev/null
+          python -m json.tool public/version.json >/dev/null
+          test -f public/index.html
+          test -f public/assets/styles.css
+          test -f public/assets/demo-questions.js
+          ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY[[:space:]]*=|PACK_SIGNING_SECRET[[:space:]]*=|postgres(ql)?://[^[:space:]]+" public
+          grep -q "DEMO / UNPUBLISHED / NOT FOR CLINICAL USE" public/assets/demo-questions.js
+          grep -q "question-pack" public/assets/app-account.js
+          grep -q "admin-metrics" public/assets/app-account.js
+
+      - name: Commit materialized application
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build SurgiBoard Global production PWA"
+          git push origin HEAD:agent/global-production-app
