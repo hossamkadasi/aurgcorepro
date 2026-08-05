@@ -1,0 +1,69 @@
+name: Live SurgiBoard smoke test
+
+on:
+  push:
+    branches:
+      - ops/live-smoke-test-20260805
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public PWA and protected API boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="https://hossamkadasi.github.io/aurgcorepro"
+          function_base="https://ckcnuqnkbhbdyfpoxppd.supabase.co/functions/v1"
+
+          fetch_200() {
+            local url="$1"
+            local output="$2"
+            local code
+            code=$(curl --retry 5 --retry-delay 2 --connect-timeout 10 --max-time 45 -sS -L -o "$output" -w "%{http_code}" "$url")
+            test "$code" = "200" || { echo "Expected HTTP 200 from $url, received $code"; exit 1; }
+          }
+
+          fetch_200 "$base/" /tmp/index.html
+          fetch_200 "$base/manifest.webmanifest" /tmp/manifest.webmanifest
+          fetch_200 "$base/sw.js" /tmp/sw.js
+          fetch_200 "$base/version.json" /tmp/version.json
+          fetch_200 "$base/assets/config.js" /tmp/config.js
+          fetch_200 "$base/assets/app-core.js" /tmp/app-core.js
+          fetch_200 "$base/assets/app-data.js" /tmp/app-data.js
+          fetch_200 "$base/assets/app-session.js" /tmp/app-session.js
+          fetch_200 "$base/assets/app-views.js" /tmp/app-views.js
+          fetch_200 "$base/assets/app-account.js" /tmp/app-account.js
+          fetch_200 "$base/assets/demo-questions.js" /tmp/demo-questions.js
+
+          grep -q "SurgiBoard Global" /tmp/index.html
+          jq -e '.name == "SurgiBoard Global" and .start_url == "./#home" and .scope == "./" and .display == "standalone"' /tmp/manifest.webmanifest >/dev/null
+          jq -e '(.version // .build) != null' /tmp/version.json >/dev/null
+          grep -q 'self.addEventListener("install"' /tmp/sw.js
+          grep -q 'self.addEventListener("fetch"' /tmp/sw.js
+          grep -q 'question-pack' /tmp/config.js
+          grep -q 'admin-metrics' /tmp/config.js
+          grep -q 'Demonstration item — unpublished, not specialist-approved, and not for clinical decision-making.' /tmp/demo-questions.js
+
+          for file in /tmp/config.js /tmp/app-core.js /tmp/app-data.js /tmp/app-session.js /tmp/app-views.js /tmp/app-account.js /tmp/demo-questions.js /tmp/sw.js; do
+            node --check "$file"
+          done
+
+          for function_name in question-pack admin-metrics; do
+            code=$(curl --retry 3 --retry-delay 1 --connect-timeout 10 --max-time 30 -sS -o "/tmp/${function_name}.json" -w "%{http_code}" \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -d '{}' \
+              "$function_base/$function_name")
+            case "$code" in
+              401|403) ;;
+              *) echo "Expected protected function $function_name to reject unauthenticated request; received HTTP $code"; cat "/tmp/${function_name}.json"; exit 1 ;;
+            esac
+          done
+
+          echo "Live PWA and protected function boundary checks passed."
